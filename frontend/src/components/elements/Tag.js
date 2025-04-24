@@ -21,4 +21,4 @@ const Tag = ({ tag, onClick, onRemove, isSelected }) => (
     </span>
   );
 
-  export default Tag;
+export default Tag;

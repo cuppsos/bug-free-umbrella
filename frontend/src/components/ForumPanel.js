@@ -7,51 +7,16 @@ import {
 // Constants for user roles, tags, sort options, thread statuses, and agent codes
 import { USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES } from './elements/constants';
 
+// Utility: Format timestamps to relative or date strings
+import { formatTime } from './elements/utils';
+
+// ** UI Components **
+// Tag badge component (displays tag name with color and optional removal button)
+import { Tag } from './elements/Tag';
+
 
 // Base API URL (adjust if needed)
 const API_URL = 'https://capstone-front-end-r1fu.onrender.com/api/threads';
-
-// Utility: Format timestamps to relative or date strings
-const formatTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  if (isNaN(date.getTime())) return timestamp; // If invalid date, return as-is
-
-  const now = new Date();
-  const diffMs   = now - date;
-  const diffSec  = Math.floor(diffMs / 1000);
-  const diffMin  = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay  = Math.floor(diffHour / 24);
-
-  if (diffSec < 60)  return 'Just now';
-  if (diffMin < 60)  return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
-  if (diffHour < 24) return `${diffHour} hour${diffHour !== 1 ? 's' : ''} ago`;
-  if (diffDay < 7)   return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`;
-  return date.toLocaleDateString();
-};
-
-// ** UI Components **
-
-// Tag badge component (displays tag name with color and optional removal button)
-const Tag = ({ tag, onClick, onRemove, isSelected }) => (
-  <span 
-    onClick={onClick}
-    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer mr-2 
-      ${tag.color} ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500' : ''} 
-      ${onRemove ? 'pr-1' : ''}`}
-  >
-    {tag.name}
-    {onRemove && (
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove(tag); }}
-        className="ml-1 p-1 hover:bg-gray-200 rounded-full"
-      >
-        <X size={12} />
-      </button>
-    )}
-  </span>
-);
 
 // Status badge component (displays thread status with proper label and color)
 const StatusBadge = ({ status }) => {
