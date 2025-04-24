@@ -12,7 +12,7 @@ import { formatTime } from './elements/utils';
 
 // ** UI Components **
 // Tag badge component (displays tag name with color and optional removal button)
-import { Tag } from './elements/Tag';
+import Tag from './elements/Tag';
 
 
 
