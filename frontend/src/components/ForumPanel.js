@@ -4,34 +4,12 @@ import {
   Search, Filter, MoreVertical, Flag, Edit, Trash, Pin, Lock, CheckCircle 
 } from 'lucide-react';
 
-// Constants for user roles, tags, sort options, and thread statuses
-const USER_ROLES = { ADMIN: 'ADMIN', MODERATOR: 'MODERATOR', USER: 'USER' };
-const AVAILABLE_TAGS = [
-  { id: 1, name: 'Announcement', color: 'bg-red-100 text-red-800' },
-  { id: 2, name: 'Major Update', color: 'bg-purple-100 text-purple-800' },
-  { id: 3, name: 'Minor Update', color: 'bg-blue-100 text-blue-800' },
-  { id: 4, name: 'Discussion', color: 'bg-pink-100 text-pink-800' },
-  { id: 5, name: 'Question', color: 'bg-yellow-100 text-yellow-800' },
-  { id: 6, name: 'Bug Report', color: 'bg-orange-100 text-orange-800' }
-];
-const SORT_OPTIONS = [
-  { value: 'latest', label: 'Latest' },
-  { value: 'oldest', label: 'Oldest' },
-  { value: 'most_voted', label: 'Most Voted' },
-  { value: 'most_discussed', label: 'Most Discussed' }
-];
-const THREAD_STATUS = {
-  OPEN:     { id: 'open', label: 'Open',     color: 'bg-green-100 text-green-800' },
-  RESOLVED: { id: 'resolved', label: 'Resolved', color: 'bg-blue-100 text-blue-800' },
-  LOCKED:   { id: 'locked', label: 'Locked',   color: 'bg-gray-100 text-gray-800' }
-};
+// Import some constants from constants.js
+import { 
+  USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES
+} from './constants'
 
-// Agent code authentication mapping (id to user info)
-const AGENT_CODES = {
-  'CO-000000001': { name: 'John Doe',    role: USER_ROLES.ADMIN },
-  'CO-000000002': { name: 'Jane Smith',  role: USER_ROLES.MODERATOR },
-  'CO-000000003': { name: 'Alex Johnson',role: USER_ROLES.USER }
-};
+
 
 // Base API URL (adjust if needed)
 const API_URL = 'http://localhost:5000/api';
@@ -58,35 +36,8 @@ const formatTime = (timestamp) => {
 
 // ** UI Components **
 
-// Tag badge component (displays tag name with color and optional removal button)
-const Tag = ({ tag, onClick, onRemove, isSelected }) => (
-  <span 
-    onClick={onClick}
-    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer mr-2 
-      ${tag.color} ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500' : ''} 
-      ${onRemove ? 'pr-1' : ''}`}
-  >
-    {tag.name}
-    {onRemove && (
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove(tag); }}
-        className="ml-1 p-1 hover:bg-gray-200 rounded-full"
-      >
-        <X size={12} />
-      </button>
-    )}
-  </span>
-);
-
-// Status badge component (displays thread status with proper label and color)
-const StatusBadge = ({ status }) => {
-  const statusObj = typeof status === 'string' ? THREAD_STATUS[status.toUpperCase()] : status;
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusObj?.color || 'bg-gray-100 text-gray-800'}`}>
-      {statusObj?.label || status}
-    </span>
-  );
-};
+import Tag from './components';
+import StatusBadge from './StatusBadge';
 
 // Dropdown action menu for thread/comment actions (edit, delete, etc.)
 const ActionMenu = ({ actions, position = 'bottom' }) => {
