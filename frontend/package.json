@@ -5,7 +5,6 @@
   "dependencies": {
     "cra-template": "1.2.0",
     "lucide-react": "^0.474.0",
-    "posthog-js": "^1.236.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-scripts": "5.0.1"
