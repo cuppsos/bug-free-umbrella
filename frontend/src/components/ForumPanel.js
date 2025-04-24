@@ -13,137 +13,17 @@ import { formatTime } from './elements/utils';
 // ** UI Components **
 // Tag badge component (displays tag name with color and optional removal button)
 import Tag from './elements/Tag';
-
+// Status badge component (displays thread status with proper label and color)
+import StatusBadge from './elements/StatusBadge';
+// Dropdown action menu for thread/comment actions (edit, delete, etc.)
+import ActionMenu from './elements/ActionMenu';
+// Single comment component (displays a comment with author, timestamp, content, and edit/delete/report actions)
+import Comment from './elements/Comment';
 
 
 // Base API URL (adjust if needed)
 const API_URL = 'https://capstone-front-end-r1fu.onrender.com/api/threads';
 
-// Status badge component (displays thread status with proper label and color)
-const StatusBadge = ({ status }) => {
-  const statusObj = typeof status === 'string' ? THREAD_STATUS[status.toUpperCase()] : status;
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusObj?.color || 'bg-gray-100 text-gray-800'}`}>
-      {statusObj?.label || status}
-    </span>
-  );
-};
-
-// Dropdown action menu for thread/comment actions (edit, delete, etc.)
-const ActionMenu = ({ actions, position = 'bottom' }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} className="p-1 hover:bg-gray-200 rounded">
-        <MoreVertical size={16} />
-      </button>
-      {open && (
-        <>
-          {/* Overlay to close menu when clicking outside */}
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className={`absolute ${position === 'bottom' ? 'top-full' : 'bottom-full'} right-0 mt-1 w-48 bg-white rounded shadow-lg z-20 py-1`}>
-            {actions.map((action, idx) => (
-              <button
-                key={idx}
-                disabled={action.disabled}
-                onClick={() => { action.onClick(); setOpen(false); }}
-                className={`w-full px-4 py-2 text-left flex items-center gap-2 text-sm 
-                  ${action.disabled ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100'} 
-                  ${action.destructive ? 'text-red-600' : 'text-gray-700'}`}
-              >
-                {action.icon}
-                {action.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-// Single comment component (displays a comment with author, timestamp, content, and edit/delete/report actions)
-const Comment = ({ comment, threadId, currentUser, onUpdate, onDelete, threadLocked }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(comment.content);
-  const isAuthor = comment.author === currentUser.name;
-  const canModerate = [USER_ROLES.ADMIN, USER_ROLES.MODERATOR].includes(currentUser.role);
-
-  // Actions available for comments
-  const commentActions = [
-    ...(isAuthor || canModerate ? [
-      {
-        label: 'Edit',
-        icon: <Edit size={16} />,
-        onClick: () => setIsEditing(true),
-        disabled: threadLocked
-      },
-      {
-        label: 'Delete',
-        icon: <Trash size={16} />,
-        onClick: () => onDelete(threadId, comment._id),
-        destructive: true
-      }
-    ] : []),
-    {
-      label: 'Report',
-      icon: <Flag size={16} />,
-      onClick: () => {/* Implement report logic if needed */},
-      disabled: isAuthor // Author cannot report their own comment
-    }
-  ];
-
-  // Editing state: show textarea and save/cancel buttons
-  if (isEditing) {
-    return (
-      <div className="mb-3 p-2 bg-gray-50 rounded">
-        <textarea
-          value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
-          className="w-full p-2 mb-2 border rounded focus:outline-none focus:border-blue-500 h-20"
-        />
-        <div className="flex justify-end gap-2">
-          <button onClick={() => setIsEditing(false)} className="px-3 py-1 border rounded hover:bg-gray-50">
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              if (editContent.trim()) {
-                onUpdate(threadId, comment._id, editContent);
-                setIsEditing(false);
-              }
-            }}
-            disabled={!editContent.trim()}
-            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Default comment display
-  return (
-    <div className="mb-3 p-2 bg-gray-50 rounded group">
-      <div className="flex justify-between text-xs text-gray-500 mb-1">
-        <div>
-          <span>{comment.author}</span>
-          <span className="mx-1">•</span>
-          <span>{formatTime(comment.createdAt || comment.timestamp)}</span>
-          {comment.editedAt && (
-            <span className="italic ml-1">• Edited {formatTime(comment.editedAt)}</span>
-          )}
-        </div>
-        {/* Actions (visible on hover) */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-          <ActionMenu actions={commentActions} position="top" />
-        </div>
-      </div>
-      <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
-    </div>
-  );
-};
 
 // Single thread preview component (for list and detailed view; includes vote, tags, status, etc.)
 const ThreadPreview = ({ thread, currentUser, onUpdate, onDelete, onSelect }) => {
