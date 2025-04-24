@@ -36,7 +36,7 @@ const formatTime = (timestamp) => {
 
 // ** UI Components **
 
-import Tag from './components';
+import Tag from './Tag';
 import StatusBadge from './StatusBadge';
 
 // Dropdown action menu for thread/comment actions (edit, delete, etc.)
