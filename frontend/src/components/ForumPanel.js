@@ -34,7 +34,7 @@ const AGENT_CODES = {
 };
 
 // Base API URL (adjust if needed)
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://capstone-front-end-r1fu.onrender.com/api';
 
 // Utility: Format timestamps to relative or date strings
 const formatTime = (timestamp) => {
