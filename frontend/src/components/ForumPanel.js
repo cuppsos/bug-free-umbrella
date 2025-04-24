@@ -17,7 +17,7 @@ import ThreadPreview from './elements/ThreadPreview';
 import ActionMenu from './elements/ActionMenu';
 
 // Base API URL (adjust if needed)
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://capstone-back-end-09mh.onrender.com';
 
 
 
