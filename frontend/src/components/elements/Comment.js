@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Edit, Trash, Flag } from 'lucide-react';
 import ActionMenu from './ActionMenu';
-import { USER_ROLES } from '.constants';
+import { USER_ROLES } from './constants';
 
 const Comment = ({ comment, threadId, currentUser, onUpdate, onDelete, threadLocked }) => {
     const [isEditing, setIsEditing] = useState(false);
