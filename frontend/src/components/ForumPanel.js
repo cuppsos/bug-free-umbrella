@@ -17,11 +17,11 @@ import ThreadPreview from './elements/ThreadPreview';
 import ActionMenu from './elements/ActionMenu';
 
 // Base API URL (adjust if needed)
-const API_URL = 'https://capstone-back-end-09mh.onrender.com/api/';
+const API_URL = 'http://localhost:5000/api';
 
 
 
-// Modal for creating a new thread/
+// Modal for creating a new thread
 const CreateThreadModal = ({ isOpen, onClose, onSubmit }) => {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
