@@ -6,6 +6,7 @@ import Tag from './Tag';
 import StatusBadge from './StatusBadge';
 import ActionMenu from './ActionMenu';
 import { THREAD_STATUS, USER_ROLES } from './constants';
+import { formatTime } from './utils';
     
 const ThreadPreview = ({ thread, currentUser, onUpdate, onDelete, onSelect }) => {
     const [isEditing, setIsEditing] = useState(false);
