@@ -9,7 +9,6 @@ import {
   USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES
 } from './elements/constants'
 
-
 // ** UI Components **
 import Tag from './elements/Tag';
 import StatusBadge from './elements/StatusBadge';
@@ -19,11 +18,6 @@ import ActionMenu from './elements/ActionMenu';
 
 // Base API URL (adjust if needed)
 const API_URL = 'http://localhost:5000/api';
-
-
-
-
-
 
 
 
