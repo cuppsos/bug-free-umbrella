@@ -4,22 +4,359 @@ import {
   Search, Filter, MoreVertical, Flag, Edit, Trash, Pin, Lock, CheckCircle 
 } from 'lucide-react';
 
-// Import some constants from constants.js
-import { 
-  USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES
-} from './elements/constants'
+// Constants for user roles, tags, sort options, and thread statuses
+const USER_ROLES = { ADMIN: 'ADMIN', MODERATOR: 'MODERATOR', USER: 'USER' };
+const AVAILABLE_TAGS = [
+  { id: 1, name: 'Announcement', color: 'bg-red-100 text-red-800' },
+  { id: 2, name: 'Major Update', color: 'bg-purple-100 text-purple-800' },
+  { id: 3, name: 'Minor Update', color: 'bg-blue-100 text-blue-800' },
+  { id: 4, name: 'Discussion', color: 'bg-pink-100 text-pink-800' },
+  { id: 5, name: 'Question', color: 'bg-yellow-100 text-yellow-800' },
+  { id: 6, name: 'Bug Report', color: 'bg-orange-100 text-orange-800' }
+];
+const SORT_OPTIONS = [
+  { value: 'latest', label: 'Latest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'most_voted', label: 'Most Voted' },
+  { value: 'most_discussed', label: 'Most Discussed' }
+];
+const THREAD_STATUS = {
+  OPEN:     { id: 'open', label: 'Open',     color: 'bg-green-100 text-green-800' },
+  RESOLVED: { id: 'resolved', label: 'Resolved', color: 'bg-blue-100 text-blue-800' },
+  LOCKED:   { id: 'locked', label: 'Locked',   color: 'bg-gray-100 text-gray-800' }
+};
 
-// ** UI Components **
-import Tag from './elements/Tag';
-import StatusBadge from './elements/StatusBadge';
-import Comment from './elements/Comment';
-import ThreadPreview from './elements/ThreadPreview';
-import ActionMenu from './elements/ActionMenu';
+// Agent code authentication mapping (id to user info)
+const AGENT_CODES = {
+  'CO-000000001': { name: 'John Doe',    role: USER_ROLES.ADMIN },
+  'CO-000000002': { name: 'Jane Smith',  role: USER_ROLES.MODERATOR },
+  'CO-000000003': { name: 'Alex Johnson',role: USER_ROLES.USER }
+};
 
 // Base API URL (adjust if needed)
 const API_URL = 'http://localhost:5000/api';
 
+// Utility: Format timestamps to relative or date strings
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return timestamp; // If invalid date, return as-is
 
+  const now = new Date();
+  const diffMs   = now - date;
+  const diffSec  = Math.floor(diffMs / 1000);
+  const diffMin  = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay  = Math.floor(diffHour / 24);
+
+  if (diffSec < 60)  return 'Just now';
+  if (diffMin < 60)  return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+  if (diffHour < 24) return `${diffHour} hour${diffHour !== 1 ? 's' : ''} ago`;
+  if (diffDay < 7)   return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`;
+  return date.toLocaleDateString();
+};
+
+// ** UI Components **
+
+// Tag badge component (displays tag name with color and optional removal button)
+const Tag = ({ tag, onClick, onRemove, isSelected }) => (
+  <span 
+    onClick={onClick}
+    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer mr-2 
+      ${tag.color} ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500' : ''} 
+      ${onRemove ? 'pr-1' : ''}`}
+  >
+    {tag.name}
+    {onRemove && (
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove(tag); }}
+        className="ml-1 p-1 hover:bg-gray-200 rounded-full"
+      >
+        <X size={12} />
+      </button>
+    )}
+  </span>
+);
+
+// Status badge component (displays thread status with proper label and color)
+const StatusBadge = ({ status }) => {
+  const statusObj = typeof status === 'string' ? THREAD_STATUS[status.toUpperCase()] : status;
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusObj?.color || 'bg-gray-100 text-gray-800'}`}>
+      {statusObj?.label || status}
+    </span>
+  );
+};
+
+// Dropdown action menu for thread/comment actions (edit, delete, etc.)
+const ActionMenu = ({ actions, position = 'bottom' }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)} className="p-1 hover:bg-gray-200 rounded">
+        <MoreVertical size={16} />
+      </button>
+      {open && (
+        <>
+          {/* Overlay to close menu when clicking outside */}
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className={`absolute ${position === 'bottom' ? 'top-full' : 'bottom-full'} right-0 mt-1 w-48 bg-white rounded shadow-lg z-20 py-1`}>
+            {actions.map((action, idx) => (
+              <button
+                key={idx}
+                disabled={action.disabled}
+                onClick={() => { action.onClick(); setOpen(false); }}
+                className={`w-full px-4 py-2 text-left flex items-center gap-2 text-sm 
+                  ${action.disabled ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100'} 
+                  ${action.destructive ? 'text-red-600' : 'text-gray-700'}`}
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// Single comment component (displays a comment with author, timestamp, content, and edit/delete/report actions)
+const Comment = ({ comment, threadId, currentUser, onUpdate, onDelete, threadLocked }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const isAuthor = comment.author === currentUser.name;
+  const canModerate = [USER_ROLES.ADMIN, USER_ROLES.MODERATOR].includes(currentUser.role);
+
+  // Actions available for comments
+  const commentActions = [
+    ...(isAuthor || canModerate ? [
+      {
+        label: 'Edit',
+        icon: <Edit size={16} />,
+        onClick: () => setIsEditing(true),
+        disabled: threadLocked
+      },
+      {
+        label: 'Delete',
+        icon: <Trash size={16} />,
+        onClick: () => onDelete(threadId, comment._id),
+        destructive: true
+      }
+    ] : []),
+    {
+      label: 'Report',
+      icon: <Flag size={16} />,
+      onClick: () => {/* Implement report logic if needed */},
+      disabled: isAuthor // Author cannot report their own comment
+    }
+  ];
+
+  // Editing state: show textarea and save/cancel buttons
+  if (isEditing) {
+    return (
+      <div className="mb-3 p-2 bg-gray-50 rounded">
+        <textarea
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          className="w-full p-2 mb-2 border rounded focus:outline-none focus:border-blue-500 h-20"
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setIsEditing(false)} className="px-3 py-1 border rounded hover:bg-gray-50">
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              if (editContent.trim()) {
+                onUpdate(threadId, comment._id, editContent);
+                setIsEditing(false);
+              }
+            }}
+            disabled={!editContent.trim()}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Default comment display
+  return (
+    <div className="mb-3 p-2 bg-gray-50 rounded group">
+      <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div>
+          <span>{comment.author}</span>
+          <span className="mx-1">•</span>
+          <span>{formatTime(comment.createdAt || comment.timestamp)}</span>
+          {comment.editedAt && (
+            <span className="italic ml-1">• Edited {formatTime(comment.editedAt)}</span>
+          )}
+        </div>
+        {/* Actions (visible on hover) */}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <ActionMenu actions={commentActions} position="top" />
+        </div>
+      </div>
+      <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+    </div>
+  );
+};
+
+// Single thread preview component (for list and detailed view; includes vote, tags, status, etc.)
+const ThreadPreview = ({ thread, currentUser, onUpdate, onDelete, onSelect }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(thread.title);
+  const [editContent, setEditContent] = useState(thread.content);
+  const isAuthor = thread.author === currentUser.name;
+  const canModerate = [USER_ROLES.ADMIN, USER_ROLES.MODERATOR].includes(currentUser.role);
+
+  // Save thread edits (title/content)
+  const handleSaveEdit = () => {
+    if (editTitle.trim() && editContent.trim()) {
+      onUpdate(thread._id, { ...thread, title: editTitle, content: editContent });
+      setIsEditing(false);
+    }
+  };
+
+  // Actions available for threads
+  const threadActions = [
+    ...(isAuthor || canModerate ? [
+      {
+        label: 'Edit',
+        icon: <Edit size={16} />,
+        onClick: () => setIsEditing(true),
+        disabled: thread.status === THREAD_STATUS.LOCKED.id
+      },
+      {
+        label: 'Delete',
+        icon: <Trash size={16} />,
+        onClick: () => onDelete(thread._id),
+        destructive: true
+      }
+    ] : []),
+    ...(canModerate ? [
+      {
+        label: thread.isPinned ? 'Unpin' : 'Pin',
+        icon: <Pin size={16} />,
+        onClick: () => onUpdate(thread._id, { ...thread, isPinned: !thread.isPinned })
+      },
+      {
+        label: thread.status === THREAD_STATUS.LOCKED.id ? 'Unlock' : 'Lock',
+        icon: <Lock size={16} />,
+        onClick: () => onUpdate(thread._id, { 
+          ...thread, 
+          status: thread.status === THREAD_STATUS.LOCKED.id ? THREAD_STATUS.OPEN.id : THREAD_STATUS.LOCKED.id 
+        })
+      },
+      {
+        label: thread.status === THREAD_STATUS.RESOLVED.id ? 'Reopen' : 'Mark Resolved',
+        icon: <CheckCircle size={16} />,
+        onClick: () => onUpdate(thread._id, { 
+          ...thread, 
+          status: thread.status === THREAD_STATUS.RESOLVED.id ? THREAD_STATUS.OPEN.id : THREAD_STATUS.RESOLVED.id 
+        })
+      }
+    ] : []),
+    {
+      label: 'Report',
+      icon: <Flag size={16} />,
+      onClick: () => {/* Implement report logic if needed */},
+      disabled: isAuthor // Author cannot report their own thread
+    }
+  ];
+
+  // If the thread is being edited (title/content)
+  if (isEditing) {
+    return (
+      <div className="mb-4 p-3 bg-gray-50 rounded shadow">
+        <input
+          type="text"
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          className="w-full p-2 mb-2 border rounded focus:outline-none focus:border-blue-500"
+        />
+        <textarea
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          className="w-full p-2 mb-2 border rounded focus:outline-none focus:border-blue-500 h-24"
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setIsEditing(false)} className="px-3 py-1 border rounded hover:bg-gray-50">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSaveEdit} 
+            disabled={!editTitle.trim() || !editContent.trim()}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Default thread preview display
+  return (
+    <div 
+      className="mb-4 p-4 bg-white rounded shadow border-l-4 border-blue-500 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onSelect && onSelect(thread)}
+    >
+      <div className="flex gap-3">
+        {/* Voting controls */}
+        <div className="flex flex-col items-center">
+          <button 
+            onClick={(e) => { e.stopPropagation(); thread.handleVote(thread._id, 1); }}
+            className={`transition-colors ${thread.userVote === 'up' ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
+          >
+            <ChevronUp size={20} />
+          </button>
+          <span className="text-sm font-bold text-gray-700 my-1">{thread.votes || 0}</span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); thread.handleVote(thread._id, -1); }}
+            className={`transition-colors ${thread.userVote === 'down' ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+          >
+            <ChevronDown size={20} />
+          </button>
+        </div>
+        {/* Thread content */}
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div className="w-full">
+              <h3 className="font-semibold text-lg text-gray-800">{thread.title}</h3>
+              {/* Tags, Status, Pinned indicator */}
+              <div className="flex flex-wrap my-2">
+                {thread.tags && thread.tags.map(tag => <Tag key={tag.id} tag={tag} />)}
+                {thread.status && <StatusBadge status={thread.status} />}
+                {thread.isPinned && (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">
+                    Pinned
+                  </span>
+                )}
+              </div>
+              <p className="text-gray-600 text-sm mb-3 whitespace-pre-wrap">{thread.content}</p>
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <div>
+                  <span>Last activity {formatTime(thread.updatedAt || thread.createdAt || thread.timestamp)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MessageCircle size={14} />
+                  <span>{thread.comments ? thread.comments.length : 0} comments</span>
+                </div>
+              </div>
+            </div>
+            {/* Thread actions (visible at all times in preview) */}
+            <div className="ml-2">
+              <ActionMenu actions={threadActions} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Modal for creating a new thread
 const CreateThreadModal = ({ isOpen, onClose, onSubmit }) => {
