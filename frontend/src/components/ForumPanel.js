@@ -8,16 +8,9 @@ import {
 // Constants for user roles, tags, sort options, thread statuses, and agent codes
 import { USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES } from './elements/constants';
 
-// Utility: Format timestamps to relative or date strings
-import { formatTime } from './elements/utils';
-
 // ** UI Components **
 // Tag badge component (displays tag name with color and optional removal button)
 import Tag from './elements/Tag';
-// Status badge component (displays thread status with proper label and color)
-import StatusBadge from './elements/StatusBadge';
-// Dropdown action menu for thread/comment actions (edit, delete, etc.)
-import ActionMenu from './elements/ActionMenu';
 // Single comment component (displays a comment with author, timestamp, content, and edit/delete/report actions)
 import Comment from './elements/Comment';
 // Single thread preview component (for list and detailed view; includes vote, tags, status, etc.)
