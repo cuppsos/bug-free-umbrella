@@ -9,6 +9,9 @@ import {
   USER_ROLES, AVAILABLE_TAGS, SORT_OPTIONS, THREAD_STATUS, AGENT_CODES
 } from './constants'
 
+// ** UI Components **
+import Tag from './Tag';
+import StatusBadge from './StatusBadge';
 
 
 // Base API URL (adjust if needed)
@@ -33,11 +36,6 @@ const formatTime = (timestamp) => {
   if (diffDay < 7)   return `${diffDay} day${diffDay !== 1 ? 's' : ''} ago`;
   return date.toLocaleDateString();
 };
-
-// ** UI Components **
-
-import Tag from './Tag';
-import StatusBadge from './StatusBadge';
 
 // Dropdown action menu for thread/comment actions (edit, delete, etc.)
 const ActionMenu = ({ actions, position = 'bottom' }) => {
