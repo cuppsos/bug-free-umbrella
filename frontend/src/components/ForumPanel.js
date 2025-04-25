@@ -367,17 +367,30 @@ const ForumPanel = () => {
   // Create a new thread
   const handleCreateThread = async (title, content, tags) => {
     try {
+      // Make sure we have currentAgent data
+      if (!currentAgent) {
+        setError('You must be logged in to create a thread');
+        return;
+      }
+  
+      // Create the thread object with the authenticated user's name
+      const threadData = {
+        title,
+        content,
+        author: currentAgent.name, 
+        tags
+      };
+  
+      console.log('Creating thread with author:', threadData.author);
+  
       const res = await fetch(`${API_URL}/threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          content,
-          author: currentAgent?.name || 'User',
-          tags
-        })
+        body: JSON.stringify(threadData)
       });
+      
       if (!res.ok) throw new Error('Failed to create thread');
+      
       const newThread = await res.json();
       setThreads(prev => [newThread, ...prev]); // add new thread to top of list
     } catch (err) {
@@ -385,6 +398,7 @@ const ForumPanel = () => {
       setError('Failed to create thread. Please try again.');
     }
   };
+  
 
   // Update an existing thread (title, content, status, pinned, etc.)
   const handleUpdateThread = async (threadId, updatedData) => {
@@ -722,11 +736,71 @@ const ForumPanel = () => {
               <Filter size={18} />
             </button>
             {/* Filter dropdown menu */}
-            {showFilterMenu && (
-              <div className="absolute top-10 right-0 w-72 bg-white border rounded shadow-md p-4 z-20">
-                {/* …existing filter UI… */}
-              </div>
-            )}
+                
+{showFilterMenu && (
+  <div className="absolute top-10 right-0 w-72 bg-white border rounded shadow-md p-4 z-20">
+    {/* Status filter */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-1">Status</label>
+      <select
+        value={selectedStatus}
+        onChange={e => setSelectedStatus(e.target.value)}
+        className="w-full p-2 border rounded"
+      >
+        <option value="">All</option>
+        {Object.values(THREAD_STATUS).map(st => (
+          <option key={st.id} value={st.id}>
+            {st.label}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Tag filter */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium mb-1">Tags</label>
+      <div className="flex flex-wrap gap-2">
+        {AVAILABLE_TAGS.map(tag => (
+          <button
+            key={tag.id}
+            onClick={() => {
+              // toggle tag in selectedTags
+              if (selectedTags.find(t => t.id === tag.id)) {
+                setSelectedTags(tags => tags.filter(t => t.id !== tag.id));
+              } else {
+                setSelectedTags(tags => [...tags, tag]);
+              }
+            }}
+            className={`px-2 py-1 text-xs rounded ${
+              selectedTags.find(t => t.id === tag.id)
+                ? 'bg-blue-200'
+                : 'bg-gray-100'
+            }`}
+          >
+            {tag.name}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    {/* Sort order */}
+    <div>
+      <label className="block text-sm font-medium mb-1">Sort by</label>
+      <select
+        value={sortBy}
+        onChange={e => setSortBy(e.target.value)}
+        className="w-full p-2 border rounded"
+      >
+        {SORT_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+)}
+
           </div>
           {/* New Thread button */}
           <button
