@@ -1,0 +1,2 @@
+# capstone-project
+For my Senior Capstone Project we worked with an advisor from Capital One to develop a full-stack discussion platform built with React, Node.js/Express, and MongoDB. The responsive React frontend allows users to start new threads with customizable tags, vote and pin posts, and leave threaded comments. Deployed on Render.com with CI/CD, the app integrates Google Analytics for usage tracking and is designed for extensibility and maintainability.
